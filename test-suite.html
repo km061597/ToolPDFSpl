@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Capture Tool - Test Suite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .content {
+            padding: 30px;
+        }
+        .test-section {
+            margin: 30px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .test-section-header {
+            background: #f9fafb;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .test-section-status {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-running { background: #dbeafe; color: #1e40af; }
+        .status-passed { background: #d1fae5; color: #065f46; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+        .test-list {
+            padding: 20px;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f9fafb;
+            border-radius: 6px;
+            border-left: 4px solid #cbd5e1;
+        }
+        .test-item.passed {
+            border-left-color: #10b981;
+            background: #ecfdf5;
+        }
+        .test-item.failed {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        .test-item.running {
+            border-left-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .test-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            min-width: 24px;
+        }
+        .test-name {
+            flex: 1;
+            font-size: 14px;
+            color: #374151;
+        }
+        .test-result {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .test-result.passed { background: #d1fae5; color: #065f46; }
+        .test-result.failed { background: #fee2e2; color: #991b1b; }
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .summary {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .console {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .console-line {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .console-info { color: #3b82f6; }
+        .console-success { color: #10b981; }
+        .console-error { color: #ef4444; }
+        .console-warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="header">
+            <h1>Page Capture Tool v21.0 - Test Suite</h1>
+            <p>Comprehensive Feature Testing</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="runAllTests()">Run All Tests</button>
+                <button class="btn btn-success" onclick="runCategoryTests('functions')">Test Functions</button>
+                <button class="btn btn-success" onclick="runCategoryTests('ui')">Test UI</button>
+                <button class="btn btn-success" onclick="runCategoryTests('integration')">Test Integration</button>
+                <button class="btn btn-primary" onclick="clearResults()">Clear Results</button>
+            </div>
+
+            <div class="summary">
+                <div class="summary-item">
+                    <div class="summary-value" id="totalTests" style="color: #6b7280;">0</div>
+                    <div class="summary-label">Total Tests</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="passedTests" style="color: #10b981;">0</div>
+                    <div class="summary-label">Passed</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="failedTests" style="color: #ef4444;">0</div>
+                    <div class="summary-label">Failed</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="successRate" style="color: #667eea;">0%</div>
+                    <div class="summary-label">Success Rate</div>
+                </div>
+            </div>
+
+            <div id="console" class="console"></div>
+
+            <!-- JavaScript Functions Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <div class="test-section-title">1. JavaScript Functions</div>
+                    <div class="test-section-status status-pending" id="status-functions">Pending</div>
+                </div>
+                <div class="test-list" id="tests-functions"></div>
+            </div>
+
+            <!-- UI Elements Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <div class="test-section-title">2. UI Elements</div>
+                    <div class="test-section-status status-pending" id="status-ui">Pending</div>
+                </div>
+                <div class="test-list" id="tests-ui"></div>
+            </div>
+
+            <!-- Bookmarklet Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <div class="test-section-title">3. Bookmarklet Features</div>
+                    <div class="test-section-status status-pending" id="status-bookmarklet">Pending</div>
+                </div>
+                <div class="test-list" id="tests-bookmarklet"></div>
+            </div>
+
+            <!-- Image Processing Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <div class="test-section-title">4. Image Processing</div>
+                    <div class="test-section-status status-pending" id="status-image">Pending</div>
+                </div>
+                <div class="test-list" id="tests-image"></div>
+            </div>
+
+            <!-- Integration Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <div class="test-section-title">5. Integration Tests</div>
+                    <div class="test-section-status status-pending" id="status-integration">Pending</div>
+                </div>
+                <div class="test-list" id="tests-integration"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TestSuite = {
+            results: {},
+            totalTests: 0,
+            passedTests: 0,
+            failedTests: 0,
+
+            tests: {
+                functions: [
+                    { name: 'switchTab function exists', test: () => typeof switchTab === 'function' },
+                    { name: 'showLoading function exists', test: () => typeof showLoading === 'function' },
+                    { name: 'hideLoading function exists', test: () => typeof hideLoading === 'function' },
+                    { name: 'selectMethod function exists', test: () => typeof selectMethod === 'function' },
+                    { name: 'generateBookmarklet function exists', test: () => typeof generateBookmarklet === 'function' },
+                    { name: 'copyCode function exists', test: () => typeof copyCode === 'function' },
+                    { name: 'generateScreenshotBookmarklet function exists', test: () => typeof generateScreenshotBookmarklet === 'function' },
+                    { name: 'setZoom function exists', test: () => typeof setZoom === 'function' },
+                    { name: 'handleFiles function exists', test: () => typeof handleFiles === 'function' },
+                    { name: 'renderReorderUI function exists', test: () => typeof renderReorderUI === 'function' },
+                    { name: 'applyReorder function exists', test: () => typeof applyReorder === 'function' },
+                    { name: 'renderVirtualCanvas function exists', test: () => typeof renderVirtualCanvas === 'function' },
+                    { name: 'removeImage function exists', test: () => typeof removeImage === 'function' },
+                    { name: 'clearAllImages function exists', test: () => typeof clearAllImages === 'function' },
+                    { name: 'clearAllBreaks function exists', test: () => typeof clearAllBreaks === 'function' },
+                    { name: 'addPageBreak function exists', test: () => typeof addPageBreak === 'function' },
+                    { name: 'renderPageBreaks function exists', test: () => typeof renderPageBreaks === 'function' },
+                    { name: 'autoBreak function exists', test: () => typeof autoBreak === 'function' },
+                    { name: 'updateStats function exists', test: () => typeof updateStats === 'function' },
+                    { name: 'generatePDF function exists', test: () => typeof generatePDF === 'function' },
+                    { name: 'generatePageImages function exists', test: () => typeof generatePageImages === 'function' },
+                    { name: 'generateMethod1Preview function exists', test: () => typeof generateMethod1Preview === 'function' },
+                    { name: 'generateMethod2ZIP function exists', test: () => typeof generateMethod2ZIP === 'function' },
+                    { name: 'generateMethod3Individual function exists', test: () => typeof generateMethod3Individual === 'function' },
+                    { name: 'generateMethod4DirectPDF function exists', test: () => typeof generateMethod4DirectPDF === 'function' },
+                    { name: 'downloadPreviewAsPDF function exists', test: () => typeof downloadPreviewAsPDF === 'function' },
+                    { name: 'closePreview function exists', test: () => typeof closePreview === 'function' },
+                    { name: 'AppState object exists', test: () => typeof AppState === 'object' },
+                ],
+                ui: [
+                    { name: 'uploadArea element exists', test: () => !!document.getElementById('uploadArea') },
+                    { name: 'fileInput element exists', test: () => !!document.getElementById('fileInput') },
+                    { name: 'imageSection element exists', test: () => !!document.getElementById('imageSection') },
+                    { name: 'virtualCanvas element exists', test: () => !!document.getElementById('virtualCanvas') },
+                    { name: 'canvasInner element exists', test: () => !!document.getElementById('canvasInner') },
+                    { name: 'statsBox element exists', test: () => !!document.getElementById('statsBox') },
+                    { name: 'reorderSection element exists', test: () => !!document.getElementById('reorderSection') },
+                    { name: 'reorderList element exists', test: () => !!document.getElementById('reorderList') },
+                    { name: 'loadingOverlay element exists', test: () => !!document.getElementById('loadingOverlay') },
+                    { name: 'pdfPreview element exists', test: () => !!document.getElementById('pdfPreview') },
+                    { name: 'previewPages element exists', test: () => !!document.getElementById('previewPages') },
+                    { name: 'selectorInput element exists', test: () => !!document.getElementById('selectorInput') },
+                    { name: 'scaleSelect element exists', test: () => !!document.getElementById('scaleSelect') },
+                    { name: 'formatSelect element exists', test: () => !!document.getElementById('formatSelect') },
+                    { name: 'Tab elements exist', test: () => document.querySelectorAll('.tab').length >= 2 },
+                    { name: 'Method cards exist', test: () => document.querySelectorAll('.method-card').length === 4 },
+                    { name: 'Zoom buttons exist', test: () => document.querySelectorAll('.zoom-btn').length === 7 },
+                ],
+                bookmarklet: [
+                    { name: 'Selector input accepts text', test: () => {
+                        const input = document.getElementById('selectorInput');
+                        input.value = '.test';
+                        return input.value === '.test';
+                    }},
+                    { name: 'Scale select has options', test: () => {
+                        const select = document.getElementById('scaleSelect');
+                        return select.options.length >= 4;
+                    }},
+                    { name: 'Format select has options', test: () => {
+                        const select = document.getElementById('formatSelect');
+                        return select.options.length >= 2;
+                    }},
+                    { name: 'Bookmarklet generates code', test: () => {
+                        document.getElementById('selectorInput').value = '.test-content';
+                        generateBookmarklet();
+                        const code = document.getElementById('bookmarkletCode').textContent;
+                        return code.includes('javascript:') && code.includes('.test-content');
+                    }},
+                    { name: 'Screenshot bookmarklet generates', test: () => {
+                        generateScreenshotBookmarklet();
+                        const code = document.getElementById('screenshotCode').textContent;
+                        return code.includes('javascript:') && code.includes('html2canvas');
+                    }},
+                ],
+                image: [
+                    { name: 'AppState initializes correctly', test: () => {
+                        return AppState.images.length === 0 &&
+                               AppState.totalHeight === 0 &&
+                               AppState.maxWidth === 0 &&
+                               AppState.pageBreaks.length === 0;
+                    }},
+                    { name: 'Canvas zoom changes state', test: () => {
+                        const originalMode = AppState.zoomMode;
+                        setZoom(1);
+                        const changed = AppState.zoomMode !== originalMode || AppState.zoomScale === 1;
+                        setZoom('fit');
+                        return changed;
+                    }},
+                    { name: 'Method selection works', test: () => {
+                        selectMethod(2);
+                        const method2 = AppState.selectedMethod === 2;
+                        selectMethod(1);
+                        return method2;
+                    }},
+                    { name: 'Stats elements update', test: () => {
+                        const statCount = document.getElementById('statCount');
+                        const statHeight = document.getElementById('statHeight');
+                        const statWidth = document.getElementById('statWidth');
+                        const statBreaks = document.getElementById('statBreaks');
+                        return statCount && statHeight && statWidth && statBreaks;
+                    }},
+                ],
+                integration: [
+                    { name: 'JSZip library loaded', test: () => typeof JSZip !== 'undefined' },
+                    { name: 'jsPDF library loaded', test: () => typeof window.jspdf !== 'undefined' },
+                    { name: 'Tab switching works', test: () => {
+                        switchTab(1);
+                        const tab1Active = document.querySelectorAll('.tab')[1].classList.contains('active');
+                        switchTab(0);
+                        return tab1Active;
+                    }},
+                    { name: 'Loading overlay can be shown', test: () => {
+                        showLoading('Test');
+                        const shown = document.getElementById('loadingOverlay').classList.contains('active');
+                        hideLoading();
+                        return shown;
+                    }},
+                    { name: 'Loading overlay can be hidden', test: () => {
+                        showLoading('Test');
+                        hideLoading();
+                        return !document.getElementById('loadingOverlay').classList.contains('active');
+                    }},
+                    { name: 'Console logging works', test: () => {
+                        const originalLog = console.log;
+                        let logged = false;
+                        console.log = () => { logged = true; };
+                        console.log('test');
+                        console.log = originalLog;
+                        return logged;
+                    }},
+                ]
+            }
+        };
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `console-line console-${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function runTest(category, testObj, index) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const testId = `${category}-${index}`;
+                    const testElement = document.getElementById(testId);
+
+                    testElement.classList.remove('pending');
+                    testElement.classList.add('running');
+
+                    try {
+                        const result = testObj.test();
+                        if (result) {
+                            testElement.classList.remove('running');
+                            testElement.classList.add('passed');
+                            testElement.querySelector('.test-result').textContent = 'PASSED';
+                            testElement.querySelector('.test-result').classList.add('passed');
+                            testElement.querySelector('.test-icon').textContent = '✓';
+                            TestSuite.passedTests++;
+                            log(`✓ ${testObj.name}`, 'success');
+                        } else {
+                            throw new Error('Test returned false');
+                        }
+                    } catch (error) {
+                        testElement.classList.remove('running');
+                        testElement.classList.add('failed');
+                        testElement.querySelector('.test-result').textContent = 'FAILED';
+                        testElement.querySelector('.test-result').classList.add('failed');
+                        testElement.querySelector('.test-icon').textContent = '✗';
+                        TestSuite.failedTests++;
+                        log(`✗ ${testObj.name}: ${error.message}`, 'error');
+                    }
+
+                    resolve();
+                }, 100);
+            });
+        }
+
+        async function runCategoryTests(category) {
+            log(`Starting ${category} tests...`, 'info');
+            const statusElement = document.getElementById(`status-${category}`);
+            statusElement.textContent = 'Running';
+            statusElement.className = 'test-section-status status-running';
+
+            const tests = TestSuite.tests[category];
+            for (let i = 0; i < tests.length; i++) {
+                await runTest(category, tests[i], i);
+            }
+
+            const allPassed = TestSuite.failedTests === 0;
+            statusElement.textContent = allPassed ? 'Passed' : 'Failed';
+            statusElement.className = `test-section-status ${allPassed ? 'status-passed' : 'status-failed'}`;
+
+            updateSummary();
+            log(`${category} tests completed`, 'success');
+        }
+
+        async function runAllTests() {
+            log('='.repeat(60), 'info');
+            log('Starting comprehensive test suite...', 'info');
+            log('='.repeat(60), 'info');
+
+            TestSuite.passedTests = 0;
+            TestSuite.failedTests = 0;
+
+            const categories = Object.keys(TestSuite.tests);
+            for (const category of categories) {
+                await runCategoryTests(category);
+            }
+
+            log('='.repeat(60), 'success');
+            log('All tests completed!', 'success');
+            log(`Total: ${TestSuite.totalTests}, Passed: ${TestSuite.passedTests}, Failed: ${TestSuite.failedTests}`, 'info');
+            log('='.repeat(60), 'success');
+        }
+
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = TestSuite.totalTests;
+            document.getElementById('passedTests').textContent = TestSuite.passedTests;
+            document.getElementById('failedTests').textContent = TestSuite.failedTests;
+
+            const rate = TestSuite.totalTests > 0 ?
+                Math.round((TestSuite.passedTests / TestSuite.totalTests) * 100) : 0;
+            document.getElementById('successRate').textContent = rate + '%';
+        }
+
+        function clearResults() {
+            document.getElementById('console').innerHTML = '';
+            TestSuite.passedTests = 0;
+            TestSuite.failedTests = 0;
+            updateSummary();
+
+            Object.keys(TestSuite.tests).forEach(category => {
+                const statusElement = document.getElementById(`status-${category}`);
+                statusElement.textContent = 'Pending';
+                statusElement.className = 'test-section-status status-pending';
+
+                const testList = document.getElementById(`tests-${category}`);
+                testList.querySelectorAll('.test-item').forEach(item => {
+                    item.className = 'test-item';
+                    item.querySelector('.test-result').textContent = '';
+                    item.querySelector('.test-result').className = 'test-result';
+                    item.querySelector('.test-icon').textContent = '○';
+                });
+            });
+
+            log('Test results cleared', 'info');
+        }
+
+        function initializeTests() {
+            TestSuite.totalTests = 0;
+
+            Object.keys(TestSuite.tests).forEach(category => {
+                const testList = document.getElementById(`tests-${category}`);
+                TestSuite.tests[category].forEach((test, index) => {
+                    TestSuite.totalTests++;
+
+                    const testItem = document.createElement('div');
+                    testItem.className = 'test-item';
+                    testItem.id = `${category}-${index}`;
+
+                    testItem.innerHTML = `
+                        <div class="test-icon">○</div>
+                        <div class="test-name">${test.name}</div>
+                        <div class="test-result"></div>
+                    `;
+
+                    testList.appendChild(testItem);
+                });
+            });
+
+            updateSummary();
+            log('Test suite initialized', 'info');
+            log(`Total tests: ${TestSuite.totalTests}`, 'info');
+        }
+
+        window.addEventListener('DOMContentLoaded', initializeTests);
+    </script>
+
+    <!-- Load the main application in an iframe to access its functions -->
+    <iframe src="index.html" style="display:none;" id="appFrame"></iframe>
+
+    <script>
+        // Wait for iframe to load, then access its window
+        document.getElementById('appFrame').addEventListener('load', function() {
+            const appWindow = this.contentWindow;
+
+            // Copy functions from the app to the test suite
+            window.switchTab = appWindow.switchTab;
+            window.showLoading = appWindow.showLoading;
+            window.hideLoading = appWindow.hideLoading;
+            window.selectMethod = appWindow.selectMethod;
+            window.generateBookmarklet = appWindow.generateBookmarklet;
+            window.copyCode = appWindow.copyCode;
+            window.generateScreenshotBookmarklet = appWindow.generateScreenshotBookmarklet;
+            window.setZoom = appWindow.setZoom;
+            window.handleFiles = appWindow.handleFiles;
+            window.renderReorderUI = appWindow.renderReorderUI;
+            window.applyReorder = appWindow.applyReorder;
+            window.renderVirtualCanvas = appWindow.renderVirtualCanvas;
+            window.removeImage = appWindow.removeImage;
+            window.clearAllImages = appWindow.clearAllImages;
+            window.clearAllBreaks = appWindow.clearAllBreaks;
+            window.addPageBreak = appWindow.addPageBreak;
+            window.renderPageBreaks = appWindow.renderPageBreaks;
+            window.autoBreak = appWindow.autoBreak;
+            window.updateStats = appWindow.updateStats;
+            window.generatePDF = appWindow.generatePDF;
+            window.generatePageImages = appWindow.generatePageImages;
+            window.generateMethod1Preview = appWindow.generateMethod1Preview;
+            window.generateMethod2ZIP = appWindow.generateMethod2ZIP;
+            window.generateMethod3Individual = appWindow.generateMethod3Individual;
+            window.generateMethod4DirectPDF = appWindow.generateMethod4DirectPDF;
+            window.downloadPreviewAsPDF = appWindow.downloadPreviewAsPDF;
+            window.closePreview = appWindow.closePreview;
+            window.AppState = appWindow.AppState;
+            window.JSZip = appWindow.JSZip;
+
+            log('Application loaded successfully', 'success');
+            log('Ready to run tests', 'info');
+        });
+    </script>
+</body>
+</html>
