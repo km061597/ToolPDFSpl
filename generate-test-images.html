@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Test Images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2563eb; }
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            background: #667eea;
+            color: white;
+        }
+        .btn:hover { background: #5568d3; }
+        .canvas-preview {
+            margin: 20px 0;
+            border: 2px solid #e5e7eb;
+            display: none;
+        }
+        .info {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Image Generator</h1>
+
+        <div class="info">
+            <p><strong>Purpose:</strong> Generate test images for the Page Capture Tool</p>
+            <p>This tool will create 5 test images with different dimensions and content.</p>
+        </div>
+
+        <button class="btn" onclick="generateAllImages()">Generate All Test Images</button>
+        <button class="btn" onclick="generateSingleImage()">Generate Single Image</button>
+
+        <div id="success" class="success">
+            <p><strong>Success!</strong> Test images have been generated and downloaded.</p>
+        </div>
+
+        <div id="preview"></div>
+    </div>
+
+    <script>
+        function createTestImage(width, height, text, color, filename) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, darkenColor(color, 20));
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Grid pattern
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, width / 2, height / 2 - 50);
+
+            ctx.font = '24px Arial';
+            ctx.fillText(`${width} x ${height}`, width / 2, height / 2 + 20);
+
+            // Border
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(2, 2, width - 4, height - 4);
+
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }, 'image/png');
+
+            return canvas;
+        }
+
+        function darkenColor(color, percent) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255))
+                .toString(16).slice(1);
+        }
+
+        function generateAllImages() {
+            const images = [
+                { width: 800, height: 600, text: 'Test Image 1', color: '#3b82f6', filename: 'test-image-1.png' },
+                { width: 1024, height: 768, text: 'Test Image 2', color: '#10b981', filename: 'test-image-2.png' },
+                { width: 1200, height: 900, text: 'Test Image 3', color: '#f59e0b', filename: 'test-image-3.png' },
+                { width: 1920, height: 1080, text: 'Test Image 4', color: '#8b5cf6', filename: 'test-image-4.png' },
+                { width: 1600, height: 1200, text: 'Test Image 5', color: '#ef4444', filename: 'test-image-5.png' }
+            ];
+
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+
+            let delay = 0;
+            images.forEach((img, index) => {
+                setTimeout(() => {
+                    const canvas = createTestImage(img.width, img.height, img.text, img.color, img.filename);
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.margin = '10px 0';
+                    canvas.style.border = '2px solid #e5e7eb';
+                    preview.appendChild(canvas);
+
+                    if (index === images.length - 1) {
+                        document.getElementById('success').style.display = 'block';
+                    }
+                }, delay);
+                delay += 300;
+            });
+        }
+
+        function generateSingleImage() {
+            createTestImage(1024, 768, 'Single Test', '#667eea', 'test-single.png');
+            document.getElementById('success').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
